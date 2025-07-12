@@ -294,6 +294,40 @@ async function viewPackageDetails(packageId) {
                 </div>
             </div>
             
+            ${package.generated_images && package.generated_images.midjourney_urls && package.generated_images.midjourney_urls.length > 0 ? `
+                <div class="mt-4">
+                    <h6 class="text-dark"><i class="fas fa-images"></i> Chọn Ảnh Thumbnail (${package.generated_images.midjourney_urls.length} ảnh)</h6>
+                    <div class="row">
+                        ${package.generated_images.midjourney_urls.map((url, index) => `
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="card image-selection-card ${package.generated_images.selected_image_url === url ? 'selected' : ''}" 
+                                     onclick="selectImage('${package.id}', '${url}', this)">
+                                    <img src="${url}" class="card-img-top" style="height: 150px; object-fit: cover;">
+                                    <div class="card-body p-2 text-center">
+                                        <small class="text-muted">Ảnh ${index + 1}</small>
+                                        ${package.generated_images.selected_image_url === url ? 
+                                            '<i class="fas fa-check-circle text-success"></i>' : 
+                                            '<i class="fas fa-circle text-muted"></i>'
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${package.generated_images.selected_image_url ? `
+                        <div class="alert alert-success mt-2">
+                            <i class="fas fa-check"></i> Đã chọn ảnh: ${package.generated_images.selected_image_url}
+                        </div>
+                    ` : `
+                        <div class="alert alert-info mt-2">
+                            <i class="fas fa-info-circle"></i> Nhấn vào ảnh để chọn làm thumbnail chính
+                        </div>
+                    `}
+                </div>
+            ` : ''}
+            
+
+            
             ${package.generated_content ? `
                 <div class="mt-4">
                     <h6 class="text-dark"><i class="fas fa-file-text"></i> Nội Dung Đã Tạo</h6>
@@ -347,6 +381,72 @@ async function downloadAssets(packageId) {
         // TODO: Implement download functionality
     } catch (error) {
         showAlert('Lỗi khi download: ' + error.message, 'danger');
+    }
+}
+
+async function selectImage(packageId, imageUrl, cardElement) {
+    try {
+        // Hiển thị loading
+        const originalContent = cardElement.innerHTML;
+        cardElement.innerHTML = `
+            <div class="text-center p-3">
+                <div class="loading-spinner mb-2"></div>
+                <small>Đang cập nhật...</small>
+            </div>
+        `;
+        
+        // Gọi API để cập nhật ảnh được chọn
+        const response = await fetch(`/api/packages/${packageId}/select-image`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                selected_image_url: imageUrl
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Lỗi khi cập nhật ảnh');
+        }
+        
+        const result = await response.json();
+        
+        // Cập nhật UI
+        document.querySelectorAll('.image-selection-card').forEach(card => {
+            card.classList.remove('selected');
+            const icon = card.querySelector('i');
+            if (icon) {
+                icon.className = 'fas fa-circle text-muted';
+            }
+        });
+        
+        // Đánh dấu ảnh được chọn
+        cardElement.classList.add('selected');
+        const icon = cardElement.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-check-circle text-success';
+        }
+        
+        // Khôi phục nội dung card
+        cardElement.innerHTML = originalContent;
+        cardElement.classList.add('selected');
+        
+        // Cập nhật alert
+        const alertContainer = document.querySelector('.alert');
+        if (alertContainer) {
+            alertContainer.className = 'alert alert-success mt-2';
+            alertContainer.innerHTML = `
+                <i class="fas fa-check"></i> Đã chọn ảnh: ${imageUrl}
+            `;
+        }
+        
+        showAlert('Đã cập nhật ảnh được chọn thành công!', 'success');
+        
+    } catch (error) {
+        // Khôi phục nội dung card nếu có lỗi
+        cardElement.innerHTML = originalContent;
+        showAlert('Lỗi khi cập nhật ảnh: ' + error.message, 'danger');
     }
 }
 

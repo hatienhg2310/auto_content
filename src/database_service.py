@@ -476,6 +476,11 @@ class DatabaseManager:
                     if clean_tag and len(clean_tag) > 1:
                         cleaned_tags.append(clean_tag)
         
+        # Lấy selected_image_url từ generated_images
+        selected_image_url = ""
+        if package.generated_images:
+            selected_image_url = package.generated_images.get_selected_image_url()
+        
         return DatabaseRecord(
             package_id=package.id,
             channel_id=package.channel_id,
@@ -485,6 +490,7 @@ class DatabaseManager:
             video_description=package.generated_content.description if package.generated_content else "No Description",
             video_tags=", ".join(cleaned_tags),
             thumbnail_image_url=thumbnail_image_url,
+            selected_image_url=selected_image_url,
             video_url=package.youtube_data.video_url if package.youtube_data else "",
             status=package.status.value,
             created_by=package.input_data.created_by,
@@ -551,7 +557,7 @@ class DatabaseManager:
                 logger.info("📋 No proper header found, adding header to existing data")
                 headers = [
                     "STT", "Ảnh gen title", "Title Video", "Tên Thumb", 
-                    "Description", "Tags", "Ảnh Thumb"
+                    "Description", "Tags", "Ảnh Thumb", "Ảnh Select", "Package ID"
                 ]
                 # Insert header ở đầu nếu sheet trống, hoặc tìm vị trí phù hợp
                 if len(all_values) == 0:
@@ -576,7 +582,7 @@ class DatabaseManager:
             worksheet_id = worksheet.id
             logger.info(f"📊 Saving to worksheet: '{worksheet_title}' (ID: {worksheet_id}, GID: {worksheet_id}) for channel: {channel_id}")
             
-            # Tạo dữ liệu theo format của user
+            # Tạo dữ liệu theo format của user + package_id ẩn để tracking
             row_data = [
                 stt,                                                    # A: STT
                 record.thumbnail_image_url or "",                       # B: Ảnh gen title (tạm dùng thumbnail URL)
@@ -584,7 +590,9 @@ class DatabaseManager:
                 record.thumbnail_name,                                  # D: Tên Thumb  
                 record.video_description[:1000],                       # E: Description (giới hạn 1000 ký tự)
                 record.video_tags,                                      # F: Tags
-                record.thumbnail_image_url or ""                        # G: Ảnh Thumb
+                record.thumbnail_image_url or "",                       # G: Ảnh Thumb
+                record.selected_image_url or "",                        # H: Ảnh Select
+                record.package_id                                       # I: Package ID (ẩn để tracking)
             ]
             
             logger.info(f"📝 Appending row with STT={stt}, Title='{record.video_title[:50]}...' to sheet '{worksheet_title}'")
@@ -697,6 +705,49 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Lỗi khi cập nhật content package: {str(e)}")
             return False
+
+    async def update_selected_image(self, package_id: str, channel_id: str, selected_image_url: str) -> bool:
+        """
+        Cập nhật chỉ cột H (Ảnh Select) theo package_id - tối ưu hóa cho việc chọn ảnh
+        """
+        try:
+            logger.info(f"Cập nhật ảnh được chọn cho package {package_id} trong kênh {channel_id}")
+            
+            worksheet = self._get_google_sheet(channel_id)
+            if not worksheet:
+                logger.warning(f"Không tìm thấy worksheet cho kênh {channel_id}")
+                return False
+            
+            # Tìm row dựa trên package_id
+            all_values = worksheet.get_all_values()
+            target_row_num = None
+            
+            for i, row in enumerate(all_values):
+                if i == 0:  # Skip header
+                    continue
+                    
+                # Tìm package_id ở cột I
+                if len(row) > 8 and row[8] == package_id:
+                    target_row_num = i + 1
+                    logger.info(f"Tìm thấy package_id {package_id} ở row {target_row_num}")
+                    break
+            
+            if target_row_num:
+                # Chỉ update cột H (Ảnh Select)
+                await asyncio.to_thread(
+                    worksheet.update, 
+                    f"H{target_row_num}", 
+                    [[selected_image_url]]
+                )
+                logger.info(f"Đã cập nhật ảnh được chọn cho package {package_id} ở row {target_row_num}")
+                return True
+            else:
+                logger.warning(f"Không tìm thấy package_id {package_id} để update ảnh")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Lỗi khi cập nhật ảnh được chọn: {str(e)}")
+            return False
     
     async def _update_in_google_sheets(self, channel_id: str, record: DatabaseRecord) -> bool:
         """
@@ -708,31 +759,60 @@ class DatabaseManager:
             if not worksheet:
                 return False
             
-            # Với format tùy chỉnh, cột C (Title Video) là unique identifier
+            # Tìm row dựa trên package_id để đảm bảo update đúng row trong luồng
             all_values = worksheet.get_all_values()
             
+            # Kiểm tra xem có cột package_id không (có thể ẩn hoặc ở cuối)
+            # Nếu không có, sẽ tìm theo video_title như cũ
+            package_id_found = False
+            target_row_num = None
+            
+            # Tìm theo package_id (ưu tiên) - có thể ở cột ẩn hoặc metadata
             for i, row in enumerate(all_values):
                 if i == 0:  # Skip header
                     continue
-                if len(row) > 2 and row[2] == record.video_title:  # Cột C là Title Video
-                    row_num = i + 1
                     
-                    # Cập nhật row theo format tùy chỉnh
-                    row_data = [
-                        row[0],                                 # A: Giữ nguyên STT
-                        record.thumbnail_image_url or "",       # B: Ảnh gen title
-                        record.video_title,                     # C: Title Video
-                        record.thumbnail_name,                  # D: Tên Thumb
-                        record.video_description[:1000],       # E: Description
-                        record.video_tags,                      # F: Tags
-                        record.thumbnail_image_url or ""        # G: Ảnh Thumb
-                    ]
-                    
-                    await asyncio.to_thread(worksheet.update, f"A{row_num}:G{row_num}", [row_data])
-                    logger.info(f"Đã cập nhật Google Sheets cho title: {record.video_title}")
-                    return True
+                # Kiểm tra xem có package_id trong row không (có thể ở cuối)
+                if len(row) > 8 and row[8] == record.package_id:  # Cột I (ẩn)
+                    target_row_num = i + 1
+                    package_id_found = True
+                    logger.info(f"Tìm thấy package_id {record.package_id} ở row {target_row_num}")
+                    break
+            
+            # Nếu không tìm thấy package_id, tìm theo video_title (fallback)
+            if not package_id_found:
+                for i, row in enumerate(all_values):
+                    if i == 0:  # Skip header
+                        continue
+                    if len(row) > 2 and row[2] == record.video_title:  # Cột C là Title Video
+                        target_row_num = i + 1
+                        logger.info(f"Tìm thấy video_title '{record.video_title}' ở row {target_row_num}")
+                        break
+            
+            if target_row_num:
+                # Lấy dữ liệu row hiện tại để giữ nguyên STT
+                current_row = all_values[target_row_num - 1]
+                current_stt = current_row[0] if len(current_row) > 0 else "1"
+                
+                # Cập nhật row theo format tùy chỉnh + package_id ẩn
+                row_data = [
+                    current_stt,                                # A: Giữ nguyên STT
+                    record.thumbnail_image_url or "",           # B: Ảnh gen title
+                    record.video_title,                         # C: Title Video
+                    record.thumbnail_name,                      # D: Tên Thumb
+                    record.video_description[:1000],           # E: Description
+                    record.video_tags,                          # F: Tags
+                    record.thumbnail_image_url or "",           # G: Ảnh Thumb
+                    record.selected_image_url or "",            # H: Ảnh Select
+                    record.package_id                           # I: Package ID (ẩn để tracking)
+                ]
+                
+                await asyncio.to_thread(worksheet.update, f"A{target_row_num}:I{target_row_num}", [row_data])
+                logger.info(f"Đã cập nhật Google Sheets cho package {record.package_id} ở row {target_row_num}")
+                return True
             
             # Nếu không tìm thấy, tạo mới
+            logger.warning(f"Không tìm thấy record để update cho package {record.package_id}, tạo mới")
             return await self._save_to_google_sheets(channel_id, record)
             
         except Exception as e:

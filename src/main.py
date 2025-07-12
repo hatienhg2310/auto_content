@@ -587,5 +587,57 @@ async def get_package_detail(package_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/packages/{package_id}/select-image")
+async def select_image(package_id: str, request: dict):
+    """Cập nhật ảnh được chọn cho package"""
+    try:
+        selected_image_url = request.get("selected_image_url")
+        
+        if not selected_image_url:
+            raise HTTPException(status_code=400, detail="Thiếu selected_image_url")
+        
+        # Lấy package từ workflow engine
+        package = workflow_engine.get_package_status(package_id)
+        
+        if not package:
+            raise HTTPException(status_code=404, detail="Không tìm thấy package")
+        
+        # Cập nhật selected_image_url
+        if package.generated_images:
+            package.generated_images.selected_image_url = selected_image_url
+            package.add_log(f"Đã chọn ảnh: {selected_image_url}")
+            
+            # Cập nhật vào database - sử dụng phương thức tối ưu chỉ update cột H
+            from src.database_service import database_manager
+            success = await database_manager.update_selected_image(
+                package_id=package_id,
+                channel_id=package.channel_id,
+                selected_image_url=selected_image_url
+            )
+            
+            if success:
+                logger.info(f"Đã cập nhật ảnh được chọn cho package {package_id} trong luồng")
+                return {
+                    "success": True,
+                    "message": "Đã cập nhật ảnh được chọn trong luồng",
+                    "selected_image_url": selected_image_url
+                }
+            else:
+                logger.warning(f"Không thể cập nhật database cho package {package_id}")
+                return {
+                    "success": True,
+                    "message": "Đã cập nhật ảnh được chọn (chưa đồng bộ database)",
+                    "selected_image_url": selected_image_url
+                }
+        else:
+            raise HTTPException(status_code=400, detail="Package không có ảnh được tạo")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Lỗi cập nhật ảnh được chọn: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 

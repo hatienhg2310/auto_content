@@ -76,6 +76,9 @@ class GeneratedImages(BaseModel):
     # Thêm hỗ trợ cho 4 URLs từ Midjourney
     midjourney_urls: List[str] = Field(default_factory=list, description="Danh sách 4 URLs từ Midjourney")
     
+    # Thêm trường để lưu ảnh được chọn từ 4 ảnh Midjourney
+    selected_image_url: Optional[str] = Field(None, description="URL ảnh được chọn từ 4 ảnh Midjourney")
+    
     additional_images: List[Dict[str, Any]] = Field(default_factory=list, description="Các ảnh bổ sung với metadata")
     image_generation_prompts: List[str] = Field(default_factory=list, description="Prompts đã sử dụng")
     
@@ -84,6 +87,10 @@ class GeneratedImages(BaseModel):
         if self.midjourney_urls:
             return " | ".join(self.midjourney_urls)
         return self.thumbnail_url or ""
+    
+    def get_selected_image_url(self) -> str:
+        """Trả về URL ảnh được chọn để lưu vào cột H"""
+        return self.selected_image_url or ""
 
 
 class YouTubeVideoData(BaseModel):
@@ -152,6 +159,7 @@ class DatabaseRecord(BaseModel):
     video_description: str = Field(..., description="Mô tả video")
     video_tags: str = Field(..., description="Tags (phân cách bằng dấu phẩy)")
     thumbnail_image_url: str = Field(default="", description="URL ảnh thumbnail")
+    selected_image_url: str = Field(default="", description="URL ảnh được chọn từ 4 ảnh Midjourney")
     video_url: str = Field(default="", description="URL video")
     status: str = Field(..., description="Trạng thái")
     created_by: str = Field(..., description="Người tạo")
