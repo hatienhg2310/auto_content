@@ -169,13 +169,13 @@
                                     </td>
                                     <td>
                                         <div class="btn-group-vertical btn-group-sm">
-                                            {% if getattr(channel, 'airtable_base_id', None) %}
+                                            {% if channel.airtable_base_id %}
                                             <span class="badge bg-info">Airtable</span>
                                             {% endif %}
-                                            {% if getattr(channel, 'google_sheets_id', None) %}
+                                            {% if channel.google_sheets_id %}
                                             <span class="badge bg-success">Sheets</span>
                                             {% endif %}
-                                            {% if not getattr(channel, 'airtable_base_id', None) and not getattr(channel, 'google_sheets_id', None) %}
+                                            {% if not channel.airtable_base_id and not channel.google_sheets_id %}
                                             <span class="badge bg-warning">Chưa cấu hình</span>
                                             {% endif %}
                                         </div>
@@ -372,4 +372,4 @@ function showAlert(type, message) {
     }, 5000);
 }
 </script>
-{% endblock %} 
+{% endblock %}

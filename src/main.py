@@ -124,8 +124,8 @@ async def channels_page(request: Request):
         channel_stats = {
             "total_channels": len(channels),
             "active_channels": sum(1 for c in channels.values() if c.is_active),
-            "channels_with_airtable": sum(1 for c in channels.values() if getattr(c, 'airtable_base_id', None)),
-            "channels_with_google_sheets": sum(1 for c in channels.values() if getattr(c, 'google_sheets_id', None))
+            "channels_with_airtable": sum(1 for c in channels.values() if c.airtable_base_id),
+            "channels_with_google_sheets": sum(1 for c in channels.values() if c.google_sheets_id)
         }
         
         return templates.TemplateResponse("channels.html", {
@@ -336,7 +336,7 @@ async def create_content(
                 base_topic = input_data.video_topic
                 
                 # Tạo 5 variations với approach khác nhau cho content đa dạng
-                for i in range(5):
+                for i in range(1):
                     # Tạo input data cho mỗi variation với approach khác nhau
                     variation_input = InputData(
                         channel_id=input_data.channel_id,
@@ -640,4 +640,4 @@ async def select_image(package_id: str, request: dict):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
