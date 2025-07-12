@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý Kênh - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-broadcast-tower text-primary"></i>
+                Quản lý Kênh YouTube
+            </h1>
+        </div>
+    </div>
+
+    <!-- Thống kê tổng quan -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3>{{ channel_stats.total_channels or 0 }}</h3>
+                    <p class="mb-0">Tổng số kênh</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3>{{ channel_stats.active_channels or 0 }}</h3>
+                    <p class="mb-0">Kênh hoạt động</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3>{{ channel_stats.channels_with_airtable or 0 }}</h3>
+                    <p class="mb-0">Có Airtable</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h3>{{ channel_stats.channels_with_google_sheets or 0 }}</h3>
+                    <p class="mb-0">Có Google Sheets</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form tạo kênh mới -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-plus-circle"></i>
+                        Tạo Kênh Mới
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="createChannelForm" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="channel_id" class="form-label">ID Kênh *</label>
+                            <input type="text" class="form-control" id="channel_id" name="channel_id" required 
+                                   placeholder="vd: my_tech_channel">
+                            <small class="form-text text-muted">Chỉ sử dụng chữ thường, số và dấu gạch dưới</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="channel_name" class="form-label">Tên Kênh *</label>
+                            <input type="text" class="form-control" id="channel_name" name="channel_name" required 
+                                   placeholder="vd: Tech Review Vietnam">
+                        </div>
+                        <div class="col-12">
+                            <label for="channel_description" class="form-label">Mô Tả Kênh *</label>
+                            <textarea class="form-control" id="channel_description" name="channel_description" rows="3" required 
+                                      placeholder="Mô tả chi tiết về kênh YouTube của bạn..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="content_style" class="form-label">Phong Cách Nội Dung</label>
+                            <input type="text" class="form-control" id="content_style" name="content_style" 
+                                   placeholder="vd: Giáo dục, Giải trí, Review">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="target_audience" class="form-label">Đối Tượng Mục Tiêu</label>
+                            <input type="text" class="form-control" id="target_audience" name="target_audience" 
+                                   placeholder="vd: Người Việt Nam 18-35 tuổi">
+                        </div>
+                        <div class="col-12">
+                            <label for="content_topics" class="form-label">Chủ Đề Chính</label>
+                            <input type="text" class="form-control" id="content_topics" name="content_topics" 
+                                   placeholder="vd: Technology, Tutorial, Review, Gaming">
+                            <small class="form-text text-muted">Phân cách bằng dấu phẩy</small>
+                        </div>
+                        
+                        <hr class="col-12">
+                        <h6 class="col-12 text-secondary">Cấu Hình Database (Tùy chọn)</h6>
+                        
+                        <div class="col-md-6">
+                            <label for="airtable_base_id" class="form-label">Airtable Base ID</label>
+                            <input type="text" class="form-control" id="airtable_base_id" name="airtable_base_id" 
+                                   placeholder="appXXXXXXXXXXXXXX">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="airtable_table_name" class="form-label">Airtable Table Name</label>
+                            <input type="text" class="form-control" id="airtable_table_name" name="airtable_table_name" 
+                                   value="Content" placeholder="Content">
+                        </div>
+                        <div class="col-12">
+                            <label for="google_sheets_id" class="form-label">Google Sheets ID</label>
+                            <input type="text" class="form-control" id="google_sheets_id" name="google_sheets_id" 
+                                   placeholder="1XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
+                        </div>
+                        
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                Tạo Kênh
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách kênh -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i>
+                        Danh Sách Kênh
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if channels %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID Kênh</th>
+                                    <th>Tên Kênh</th>
+                                    <th>Phong Cách</th>
+                                    <th>Đối Tượng</th>
+                                    <th>Database</th>
+                                    <th>Trạng Thái</th>
+                                    <th>Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for channel_id, channel in channels.items() %}
+                                <tr>
+                                    <td>
+                                        <code>{{ channel_id }}</code>
+                                    </td>
+                                    <td>
+                                        <strong>{{ channel.channel_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ channel.channel_description[:100] }}...</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ channel.content_style or 'Chưa xác định' }}</span>
+                                    </td>
+                                    <td>
+                                        <small>{{ channel.target_audience or 'Chưa xác định' }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group-vertical btn-group-sm">
+                                            {% if getattr(channel, 'airtable_base_id', None) %}
+                                            <span class="badge bg-info">Airtable</span>
+                                            {% endif %}
+                                            {% if getattr(channel, 'google_sheets_id', None) %}
+                                            <span class="badge bg-success">Sheets</span>
+                                            {% endif %}
+                                            {% if not getattr(channel, 'airtable_base_id', None) and not getattr(channel, 'google_sheets_id', None) %}
+                                            <span class="badge bg-warning">Chưa cấu hình</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if channel.is_active %}
+                                        <span class="badge bg-success">Hoạt động</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Tạm dừng</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="/dashboard?channel_id={{ channel_id }}" class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button class="btn btn-outline-secondary" onclick="editChannel('{{ channel_id }}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info" onclick="syncChannelDatabase('{{ channel_id }}')">
+                                                <i class="fas fa-sync"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" onclick="deleteChannel('{{ channel_id }}', '{{ channel.channel_name }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-broadcast-tower fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Chưa có kênh nào</h5>
+                        <p class="text-muted">Tạo kênh đầu tiên để bắt đầu sử dụng hệ thống</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 mb-0">Đang xử lý...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form tạo kênh
+    const createChannelForm = document.getElementById('createChannelForm');
+    
+    createChannelForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        loadingModal.show();
+        
+        try {
+            const formData = new FormData(createChannelForm);
+            
+            const response = await fetch('/api/channels', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert('success', result.message);
+                createChannelForm.reset();
+                // Reload trang sau 1 giây
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showAlert('danger', result.message || 'Có lỗi xảy ra');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('danger', 'Lỗi kết nối: ' + error.message);
+        } finally {
+            loadingModal.hide();
+        }
+    });
+    
+    // Validate channel ID format
+    const channelIdInput = document.getElementById('channel_id');
+    channelIdInput.addEventListener('input', function() {
+        const value = this.value;
+        const isValid = /^[a-z0-9_]+$/.test(value);
+        
+        if (value && !isValid) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+});
+
+// Hàm xóa kênh
+async function deleteChannel(channelId, channelName) {
+    if (!confirm(`Bạn có chắc muốn xóa kênh "${channelName}"?`)) {
+        return;
+    }
+    
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    try {
+        const response = await fetch(`/api/channels/${channelId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('success', result.message);
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showAlert('danger', result.message || 'Có lỗi xảy ra');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('danger', 'Lỗi kết nối: ' + error.message);
+    } finally {
+        loadingModal.hide();
+    }
+}
+
+// Hàm sync database kênh
+async function syncChannelDatabase(channelId) {
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    try {
+        const response = await fetch(`/api/channels/${channelId}/sync-database`, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('success', result.message);
+        } else {
+            showAlert('warning', result.message || 'Lỗi khi đồng bộ');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('danger', 'Lỗi kết nối: ' + error.message);
+    } finally {
+        loadingModal.hide();
+    }
+}
+
+// Hàm edit kênh (placeholder)
+function editChannel(channelId) {
+    showAlert('info', 'Chức năng chỉnh sửa sẽ có trong phiên bản tiếp theo');
+}
+
+// Hàm hiển thị alert
+function showAlert(type, message) {
+    const alertContainer = document.createElement('div');
+    alertContainer.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertContainer.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertContainer.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertContainer);
+    
+    // Tự động ẩn sau 5 giây
+    setTimeout(() => {
+        if (alertContainer.parentNode) {
+            alertContainer.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %} 
