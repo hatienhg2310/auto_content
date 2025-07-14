@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Trang Chủ - YouTube Automation{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <h1 class="display-4">Tự Động Hóa Nội Dung YouTube</h1>
+        <p class="lead"> Nhập thông tin kênh và chủ đề để tạo nội dung YouTube một cách nhanh chóng.</p>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <!-- Form tạo nội dung -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-header">
+            <h4><i class="fas fa-plus-circle"></i> Tạo Nội Dung YouTube Mới</h4>
+        </div>
+        <div class="card-body">
+            <form id="create-content-form" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="channel-name" class="form-label">Tên Kênh Của Bạn</label>
+                        <input type="text" id="channel-name" name="channel_name" class="form-control" placeholder=" " required>
+                    </div>
+                     <div class="col-md-6 mb-3">
+                        <label for="video-topic" class="form-label">Chủ Đề Video</label>
+                        <input type="text" id="video-topic" name="video_topic" class="form-control" placeholder=" " required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="channel-description" class="form-label">Mô Tả Kênh</label>
+                    <textarea id="channel-description" name="channel_description" class="form-control" rows="3" placeholder="Mô tả ngắn gọn về nội dung chính của kênh..." required></textarea>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="video-frame" class="form-label">Ảnh Frame Video (Tùy chọn)</label>
+                        <input type="file" id="video-frame" name="video_frame" class="form-control" accept="image/*">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="additional-context" class="form-label">Thông Tin Bổ Sung (Tùy chọn)</label>
+                        <textarea id="additional-context" name="additional_context" class="form-control" rows="1" placeholder="Từ khóa, yêu cầu đặc biệt..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="text-end mt-3">
+                    <button type="reset" class="btn btn-secondary">Reset</button>
+                    <button type="submit" class="btn btn-primary">Tạo Nội Dung</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Workflow Section -->
+    <section class="py-5 workflow-section rounded">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h3>Quy Trình Tự Động Hóa</h3>
+                <p class="text-muted">Các giai đoạn được tự động hóa</p>
+            </div>
+            
+            <div class="row text-center">
+                <div class="col-md mb-4">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-upload fa-2x"></i>
+                    </div>
+                    <h6 class="mt-3">1. Input</h6>
+                    <small class="text-muted">Nhận thông tin kênh & chủ đề</small>
+                </div>
+                
+                <div class="col-md mb-4">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-brain fa-2x"></i>
+                    </div>
+                    <h6 class="mt-3">2. AI Content</h6>
+                    <small class="text-muted">Tạo title, description, tags</small>
+                </div>
+                
+                <div class="col-md mb-4">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-image fa-2x"></i>
+                    </div>
+                    <h6 class="mt-3">3. AI Images</h6>
+                    <small class="text-muted">Tạo thumbnail & hình ảnh</small>
+                </div>
+                
+                <div class="col-md mb-4">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-cogs fa-2x"></i>
+                    </div>
+                    <h6 class="mt-3">4. Processing</h6>
+                    <small class="text-muted">Gộp và xử lý nội dung</small>
+                </div>
+                
+                <div class="col-md mb-4">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                    <h6 class="mt-3">5. Complete</h6>
+                    <small class="text-muted">Hoàn thành gói nội dung</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('create-content-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
+    
+    showLoading(submitButton);
+    
+    try {
+        const response = await fetch('/api/create-content', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showAlert(result.message, 'success');
+            form.reset();
+            // Optional: Redirect to dashboard if you want
+            // setTimeout(() => {
+            //     window.location.href = `/dashboard`;
+            // }, 2000);
+        } else {
+            showAlert(result.detail || 'Có lỗi xảy ra', 'danger');
+        }
+    } catch (error) {
+        showAlert('Lỗi kết nối: ' + error.message, 'danger');
+    } finally {
+        hideLoading(submitButton, originalButtonText);
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,94 @@
+{
+  "spreadsheet_id": "1CYlv55WZf4Y5SDGQnnsmy0sUz_SYm1ZXPXaII7zKzUs",
+  "channels": [
+    {
+      "channel_id": "mindful_piano_nature",
+      "channel_name": "Mindful Piano Nature",
+      "channel_description": "Kênh Mindful Piano Nature - Piano Music with Nature Sounds",
+      "google_sheet_name": "Mindful Piano Nature",
+      "google_sheet_url": "https://docs.google.com/spreadsheets/d/1CYlv55WZf4Y5SDGQnnsmy0sUz_SYm1ZXPXaII7zKzUs/edit?gid=1150300225#gid=1150300225",
+      "google_sheet_gid": "1150300225",
+      "content_style": "Piano Music with Nature Sounds",
+      "target_audience": "People seeking relaxation and meditation",
+      "content_topics": [
+        "piano music",
+        "relaxation",
+        "music",
+        "peaceful sounds",
+        "ambient music",
+        "nature sounds"
+      ]
+    },
+    {
+      "channel_id": "nature_inspiring_music",
+      "channel_name": "Nature Inspiring Music",
+      "channel_description": "Kênh Nature Inspiring Music - Relaxing Music with Nature Sounds",
+      "google_sheet_name": "Nature Inspiring Music",
+      "google_sheet_url": "https://docs.google.com/spreadsheets/d/1CYlv55WZf4Y5SDGQnnsmy0sUz_SYm1ZXPXaII7zKzUs/edit?gid=116486331#gid=116486331",
+      "google_sheet_gid": "116486331",
+      "content_style": "Relaxing Music with Nature Sounds",
+      "target_audience": "People seeking relaxation and meditation",
+      "content_topics": [
+        "relaxation",
+        "music",
+        "peaceful sounds",
+        "ambient music",
+        "nature sounds"
+      ]
+    },
+    {
+      "channel_id": "piano_recovery_vibe",
+      "channel_name": "Piano Recovery Vibe",
+      "channel_description": "Kênh Piano Recovery Vibe - Piano Music",
+      "google_sheet_name": "Piano Recovery Vibe",
+      "google_sheet_url": "https://docs.google.com/spreadsheets/d/1CYlv55WZf4Y5SDGQnnsmy0sUz_SYm1ZXPXaII7zKzUs/edit?gid=1052818939#gid=1052818939",
+      "google_sheet_gid": "1052818939",
+      "content_style": "Piano Music",
+      "target_audience": "People seeking relaxation and meditation",
+      "content_topics": [
+        "music",
+        "piano music",
+        "relaxation",
+        "peaceful sounds"
+      ]
+    },
+    {
+      "channel_id": "peaceful_healing_piano",
+      "channel_name": "Peaceful Healing Piano",
+      "channel_description": "Kênh Peaceful Healing Piano - Healing Music",
+      "google_sheet_name": "Peaceful Healing Piano",
+      "google_sheet_url": "https://docs.google.com/spreadsheets/d/1CYlv55WZf4Y5SDGQnnsmy0sUz_SYm1ZXPXaII7zKzUs/edit?gid=1508162368#gid=1508162368",
+      "google_sheet_gid": "1508162368",
+      "content_style": "Healing Music",
+      "target_audience": "People seeking relaxation and meditation",
+      "content_topics": [
+        "piano music",
+        "relaxation",
+        "music",
+        "healing music",
+        "therapeutic sounds",
+        "peaceful sounds"
+      ]
+    },
+    {
+      "channel_id": "meditative_nature_sounds",
+      "channel_name": "Meditative Nature Sounds",
+      "channel_description": "Kênh Meditative Nature Sounds - Meditation Music",
+      "google_sheet_name": "Meditative Nature Sounds",
+      "google_sheet_url": "https://docs.google.com/spreadsheets/d/1CYlv55WZf4Y5SDGQnnsmy0sUz_SYm1ZXPXaII7zKzUs/edit?gid=753312806#gid=753312806",
+      "google_sheet_gid": "753312806",
+      "content_style": "Meditation Music",
+      "target_audience": "People seeking relaxation and meditation",
+      "content_topics": [
+        "relaxation",
+        "mindfulness",
+        "music",
+        "peaceful sounds",
+        "ambient music",
+        "meditation music",
+        "nature sounds"
+      ]
+    }
+   
+  ]
+}
