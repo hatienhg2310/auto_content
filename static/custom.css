@@ -123,6 +123,13 @@ body {
     object-fit: cover;
     border-radius: 8px;
     border: 2px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.thumbnail-preview:hover {
+    transform: scale(1.05);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 8px rgba(66, 133, 244, 0.2);
 }
 
 .loading-spinner {
@@ -237,6 +244,12 @@ body {
 .image-selection-card:hover img {
     opacity: 0.9;
 } 
+
+/* Progress bar widths */
+.progress-0 { width: 0%; }
+.progress-25 { width: 25%; }
+.progress-50 { width: 50%; }
+.progress-100 { width: 100%; }
 
 /* Channel-specific styling */
 .channel-section {

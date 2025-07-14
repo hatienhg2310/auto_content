@@ -315,18 +315,18 @@ async def create_content(
         
         # Xử lý file ảnh nếu có
         if video_frame:
-            # Tạo thư mục lưu ảnh tạm
-            temp_dir = os.path.join(settings.data_storage_path, "temp_frames")
-            os.makedirs(temp_dir, exist_ok=True)
+            # Lưu ảnh vào thư mục images để có thể truy cập qua URL
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"frame_{timestamp}_{uuid.uuid4().hex[:8]}_{video_frame.filename}"
+            file_path = os.path.join(settings.images_storage_path, filename)
             
-            # Lưu file
-            file_path = os.path.join(temp_dir, f"{uuid.uuid4().hex}_{video_frame.filename}")
             with open(file_path, "wb") as f:
                 content = await video_frame.read()
                 f.write(content)
             
-            # Cập nhật đường dẫn file
+            # Cập nhật đường dẫn file và URL
             input_data.video_frame_file = file_path
+            input_data.video_frame_url = f"/images/{filename}"
         
         # Chạy workflow để tạo 1 content trong background
         async def process_single_content():
