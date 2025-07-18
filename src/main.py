@@ -12,21 +12,6 @@ import uuid
 import sys
 import pathlib
 import json
-import re
-
-
-def sanitize_filename(filename: str) -> str:
-    """Sanitizes a filename by removing special characters and replacing spaces."""
-    if not filename:
-        return ""
-    # Replace spaces and known problematic characters with underscore
-    filename = re.sub(r'[\\s/\\\\:*?"<>|]+', '_', filename)
-    # Remove any other non-alphanumeric, non-dot, non-underscore, non-hyphen characters
-    filename = re.sub(r'[^\\w\\.\\-_]', '', filename)
-    # Collapse multiple underscores
-    filename = re.sub(r'__+', '_', filename)
-    return filename
-
 
 # Thêm thư mục gốc vào sys.path
 root_dir = str(pathlib.Path(__file__).parent.parent.absolute())
@@ -176,10 +161,7 @@ async def create_content(
             if video_frame:
                 logger.info("Xử lý upload ảnh frame trực tiếp")
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                
-                # Sanitize filename
-                safe_filename = sanitize_filename(video_frame.filename)
-                filename = f"frame_{timestamp}_{uuid.uuid4().hex[:8]}_{safe_filename}"
+                filename = f"frame_{timestamp}_{uuid.uuid4().hex[:8]}_{video_frame.filename}"
                 file_path = os.path.join(settings.images_storage_path, filename)
                 
                 with open(file_path, "wb") as f:
@@ -196,8 +178,7 @@ async def create_content(
                 
                 # Lưu video file tạm thời
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                safe_video_filename = sanitize_filename(video_file.filename)
-                video_filename = f"video_{timestamp}_{uuid.uuid4().hex[:8]}_{safe_video_filename}"
+                video_filename = f"video_{timestamp}_{uuid.uuid4().hex[:8]}_{video_file.filename}"
                 video_path = os.path.join(settings.images_storage_path, video_filename)
                 
                 with open(video_path, "wb") as f:
@@ -321,12 +302,9 @@ async def get_all_packages():
                 "package_id": package.id,
                 "channel_id": package.channel_id,
                 "channel_name": package.input_data.channel_name,
-                "status": package.status.value,
-                "created_at": package.created_at.isoformat(),
-                "title": package.generated_content.title if package.generated_content else "Đang tạo...",
-                "logs": package.processing_logs[-2:],
-                "video_frame_url": package.input_data.video_frame_url,
-                "thumbnail_url": package.generated_images.thumbnail_url if package.generated_images else None
+                "status": package.status,
+                "created_at": package.created_at,
+                "title": package.generated_content.title if package.generated_content else None
             })
         
         return {"packages": result}

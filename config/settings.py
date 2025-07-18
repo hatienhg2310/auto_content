@@ -43,10 +43,9 @@ class Settings(BaseSettings):
     debug: bool = True
     
     # Storage Paths
-    base_dir: Path = Path(__file__).resolve().parent.parent
-    data_storage_path: str = str(base_dir / "data")
-    images_storage_path: str = str(base_dir / "data" / "images")
-    logs_path: str = str(base_dir / "logs")
+    data_storage_path: str = "./data"
+    images_storage_path: str = "./data/images"
+    logs_path: str = "./logs"
     
     # Content Creator Info
     channel_owner_name: str = "Team AI"
