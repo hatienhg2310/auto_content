@@ -87,14 +87,6 @@
                         <i class="fas fa-sync-alt"></i> Refresh
                     </button>
                     
-                    <button class="btn btn-info btn-sm" onclick="syncDatabases()">
-                        <i class="fas fa-cloud-sync"></i> Sync Databases
-                    </button>
-                    
-                    <button class="btn btn-warning btn-sm" onclick="cleanupPackages()">
-                        <i class="fas fa-trash"></i> Cleanup Old
-                    </button>
-                    
                     <button class="btn btn-primary btn-sm" onclick="window.location.href='/'">
                         <i class="fas fa-plus"></i> Tạo Mới
                     </button>
@@ -142,24 +134,24 @@
                     <div class="row">
                         {% for package in channel_packages %}
                 <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="card h-100">
+                    <div class="card h-100" id="package-card-{{ package.id }}">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-0">
-                                            <i class="fas fa-tv text-primary"></i> 
+                                <h6 class="mb-0 package-channel-name">
+                                    <i class="fas fa-tv text-primary"></i> 
                                     {{ package.channel_name }}
                                 </h6>
-                                <small class="text-muted">{{ package.id }}</small>
+                                <small class="text-muted package-id">{{ package.id }}</small>
                             </div>
-                            <span class="badge status-badge status-{{ package.status }}">
+                            <span class="badge status-badge status-{{ package.status }} package-status">
                                 {{ package.status.upper() }}
                             </span>
                         </div>
                         
                         <div class="card-body">
-                            <!-- Thumbnail Preview -->
-                            {% if package.input_data.video_frame_url %}
-                            <div class="text-center mb-3 position-relative">
+                            <!-- Thumbnail Preview Container -->
+                            <div class="thumbnail-container text-center mb-3 position-relative">
+                                {% if package.input_data.video_frame_url %}
                                 <img src="{{ package.input_data.video_frame_url }}" 
                                      alt="Reference Frame" 
                                      class="thumbnail-preview"
@@ -168,10 +160,8 @@
                                      style="font-size: 0.7rem; margin: 2px;">
                                     <i class="fas fa-upload"></i> Ref
                                 </div>
-                            </div>
-                            {% elif package.thumbnail_url %}
-                            <div class="text-center mb-3 position-relative">
-                                <img src="{{ package.thumbnail_url }}" 
+                                {% elif package.generated_images and package.generated_images.thumbnail_url %}
+                                <img src="{{ package.generated_images.thumbnail_url }}" 
                                      alt="Generated Thumbnail" 
                                      class="thumbnail-preview"
                                      title="Ảnh được tạo">
@@ -179,66 +169,55 @@
                                      style="font-size: 0.7rem; margin: 2px;">
                                     <i class="fas fa-magic"></i> AI
                                 </div>
-                            </div>
-                            {% else %}
-                            <div class="text-center mb-3">
+                                {% else %}
                                 <div class="bg-dark rounded d-flex align-items-center justify-content-center" 
                                      style="height: 85px; max-width: 150px; margin: 0 auto;">
                                     <i class="fas fa-image fa-2x text-muted"></i>
                                 </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
                             
                             <!-- Title -->
-                            <h6 class="card-title">
-                                {% if package.title and package.title != "Đang tạo..." %}
-                                    {{ package.title[:60] }}...
+                            <h6 class="card-title package-title">
+                                {% if package.generated_content and package.generated_content.title and package.generated_content.title != "Đang tạo..." %}
+                                    {{ package.generated_content.title[:60] }}{% if package.generated_content.title|length > 60 %}...{% endif %}
                                 {% else %}
                                     <span class="text-muted">
-                                        <i class="fas fa-spinner fa-spin"></i> 
-                                        Đang tạo nội dung...
+                                        {{ package.input_data.video_topic or package.id }}
                                     </span>
                                 {% endif %}
                             </h6>
                             
                             <!-- Timestamps -->
-                            <div class="small text-muted mb-3">
+                            <div class="small text-muted mb-3 package-created-at">
                                 <div>
                                     <i class="fas fa-calendar"></i> 
-                                    {{ package.created_at }}
+                                    {{ package.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
                                 </div>
                             </div>
                             
                             <!-- Status Progress -->
-                            <div class="mb-3">
+                            <div class="mb-3 package-progress-container">
                                 {% set progress_map = {
                                     'pending': 0,
                                     'processing': 25,
                                     'generating_content': 50,
                                     'generated': 100,
-                                    'failed': 0
+                                    'failed': 100 
                                 } %}
-                                {% set progress = progress_map.get(package.status, 0) %}
+                                {% set progress = progress_map.get(package.status.value, 0) %}
                                 
                                 <div class="progress" style="height: 6px;">
-                                    <div class="progress-bar progress-{{ progress }}
-                                        {% if package.status == 'failed' %}bg-danger
-                                        {% elif package.status == 'generated' %}bg-success
-                                        {% else %}bg-primary{% endif %}">
+                                    <div class="progress-bar" 
+                                         role="progressbar"
+                                         style="width: {{ progress }}%;"
+                                         aria-valuenow="{{ progress }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
                                     </div>
                                 </div>
-                                <small class="text-muted">
-                                    {% if package.status == 'pending' %}
-                                        Chờ xử lý
-                                    {% elif package.status == 'processing' %}
-                                        Đang xử lý...
-                                    {% elif package.status == 'generating_content' %}
-                                        Đang tạo nội dung...
-                                    {% elif package.status == 'generated' %}
-                                        Hoàn thành
-                                    {% elif package.status == 'failed' %}
-                                        Thất bại
-                                    {% endif %}
+                                <small class="text-muted package-status-text">
+                                    {{ package.status.value.replace('_', ' ')|title }}
                                 </small>
                             </div>
                         </div>
@@ -249,29 +228,22 @@
                                         onclick="viewPackageDetails('{{ package.id }}')">
                                     <i class="fas fa-eye"></i> Chi tiết
                                 </button>
-                                
-                                {% if package.status == 'generated' %}
-                                <button class="btn btn-sm btn-success" 
-                                        onclick="downloadAssets('{{ package.id }}')">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                {% endif %}
                             </div>
                             
                             <!-- Recent Logs -->
-                            {% if package.logs %}
-                            <div class="mt-2">
+                            <div class="mt-2 package-logs-container" style="max-height: 60px; overflow-y: auto;">
+                                {% if package.processing_logs %}
                                 <small class="text-muted">Logs gần nhất:</small>
-                                <div class="mt-1" style="max-height: 60px; overflow-y: auto;">
-                                    {% for log in package.logs[-2:] %}
+                                <div class="mt-1">
+                                    {% for log in package.processing_logs[-2:] %}
                                     <div class="small text-muted">
                                         <i class="fas fa-chevron-right"></i> 
                                         {{ log.split(': ', 1)[1] if ': ' in log else log }}
                                     </div>
                                     {% endfor %}
                                 </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -284,24 +256,24 @@
                 <div class="row">
                     {% for package in packages %}
                     <div class="col-lg-6 col-xl-4 mb-4">
-                        <div class="card h-100">
+                        <div class="card h-100" id="package-card-{{ package.id }}">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-0">
+                                    <h6 class="mb-0 package-channel-name">
                                         <i class="fas fa-tv text-primary"></i> 
                                         {{ package.channel_name }}
                                     </h6>
-                                    <small class="text-muted">{{ package.id }}</small>
+                                    <small class="text-muted package-id">{{ package.id }}</small>
                                 </div>
-                                <span class="badge status-badge status-{{ package.status }}">
+                                <span class="badge status-badge status-{{ package.status }} package-status">
                                     {{ package.status.upper() }}
                                 </span>
                             </div>
                             
                             <div class="card-body">
-                                <!-- Thumbnail Preview -->
-                                {% if package.input_data.video_frame_url %}
-                                <div class="text-center mb-3 position-relative">
+                                <!-- Thumbnail Preview Container -->
+                                <div class="thumbnail-container text-center mb-3 position-relative">
+                                    {% if package.input_data.video_frame_url %}
                                     <img src="{{ package.input_data.video_frame_url }}" 
                                          alt="Reference Frame" 
                                          class="thumbnail-preview"
@@ -310,10 +282,8 @@
                                          style="font-size: 0.7rem; margin: 2px;">
                                         <i class="fas fa-upload"></i> Ref
                                     </div>
-                                </div>
-                                {% elif package.thumbnail_url %}
-                                <div class="text-center mb-3 position-relative">
-                                    <img src="{{ package.thumbnail_url }}" 
+                                    {% elif package.generated_images and package.generated_images.thumbnail_url %}
+                                    <img src="{{ package.generated_images.thumbnail_url }}" 
                                          alt="Generated Thumbnail" 
                                          class="thumbnail-preview"
                                          title="Ảnh được tạo">
@@ -321,66 +291,55 @@
                                          style="font-size: 0.7rem; margin: 2px;">
                                         <i class="fas fa-magic"></i> AI
                                     </div>
-                                </div>
-                                {% else %}
-                                <div class="text-center mb-3">
+                                    {% else %}
                                     <div class="bg-dark rounded d-flex align-items-center justify-content-center" 
                                          style="height: 85px; max-width: 150px; margin: 0 auto;">
                                         <i class="fas fa-image fa-2x text-muted"></i>
                                     </div>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
                                 
                                 <!-- Title -->
-                                <h6 class="card-title">
-                                    {% if package.title and package.title != "Đang tạo..." %}
-                                        {{ package.title[:60] }}...
+                                <h6 class="card-title package-title">
+                                    {% if package.generated_content and package.generated_content.title and package.generated_content.title != "Đang tạo..." %}
+                                        {{ package.generated_content.title[:60] }}{% if package.generated_content.title|length > 60 %}...{% endif %}
                                     {% else %}
                                         <span class="text-muted">
-                                            <i class="fas fa-spinner fa-spin"></i> 
-                                            Đang tạo nội dung...
+                                            {{ package.input_data.video_topic or package.id }}
                                         </span>
                                     {% endif %}
                                 </h6>
                                 
                                 <!-- Timestamps -->
-                                <div class="small text-muted mb-3">
+                                <div class="small text-muted mb-3 package-created-at">
                                     <div>
                                         <i class="fas fa-calendar"></i> 
-                                        {{ package.created_at }}
+                                        {{ package.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
                                     </div>
                                 </div>
                                 
                                 <!-- Status Progress -->
-                                <div class="mb-3">
+                                <div class="mb-3 package-progress-container">
                                     {% set progress_map = {
                                         'pending': 0,
                                         'processing': 25,
                                         'generating_content': 50,
                                         'generated': 100,
-                                        'failed': 0
+                                        'failed': 100 
                                     } %}
-                                    {% set progress = progress_map.get(package.status, 0) %}
+                                    {% set progress = progress_map.get(package.status.value, 0) %}
                                     
                                     <div class="progress" style="height: 6px;">
-                                        <div class="progress-bar progress-{{ progress }}
-                                            {% if package.status == 'failed' %}bg-danger
-                                            {% elif package.status == 'generated' %}bg-success
-                                            {% else %}bg-primary{% endif %}">
+                                        <div class="progress-bar" 
+                                             role="progressbar"
+                                             style="width: {{ progress }}%;"
+                                             aria-valuenow="{{ progress }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
                                         </div>
                                     </div>
-                                    <small class="text-muted">
-                                        {% if package.status == 'pending' %}
-                                            Chờ xử lý
-                                        {% elif package.status == 'processing' %}
-                                            Đang xử lý...
-                                        {% elif package.status == 'generating_content' %}
-                                            Đang tạo nội dung...
-                                        {% elif package.status == 'generated' %}
-                                            Hoàn thành
-                                        {% elif package.status == 'failed' %}
-                                            Thất bại
-                                        {% endif %}
+                                    <small class="text-muted package-status-text">
+                                        {{ package.status.value.replace('_', ' ')|title }}
                                     </small>
                                 </div>
                             </div>
@@ -391,29 +350,22 @@
                                             onclick="viewPackageDetails('{{ package.id }}')">
                                         <i class="fas fa-eye"></i> Chi tiết
                                     </button>
-                                    
-                                    {% if package.status == 'generated' %}
-                                    <button class="btn btn-sm btn-success" 
-                                            onclick="downloadAssets('{{ package.id }}')">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                    {% endif %}
                                 </div>
                                 
                                 <!-- Recent Logs -->
-                                {% if package.logs %}
-                                <div class="mt-2">
+                                <div class="mt-2 package-logs-container" style="max-height: 60px; overflow-y: auto;">
+                                    {% if package.processing_logs %}
                                     <small class="text-muted">Logs gần nhất:</small>
-                                    <div class="mt-1" style="max-height: 60px; overflow-y: auto;">
-                                        {% for log in package.logs[-2:] %}
+                                    <div class="mt-1">
+                                        {% for log in package.processing_logs[-2:] %}
                                         <div class="small text-muted">
                                             <i class="fas fa-chevron-right"></i> 
                                             {{ log.split(': ', 1)[1] if ': ' in log else log }}
                                         </div>
                                         {% endfor %}
                                     </div>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -421,289 +373,237 @@
                 </div>
             {% endif %}
         {% else %}
-            <!-- Empty State -->
             <div class="text-center py-5">
-                <div class="mb-4">
-                    <i class="fas fa-inbox fa-4x text-muted"></i>
-                </div>
-                <h4 class="text-muted">
-                    {% if current_channel %}
-                        Chưa có nội dung nào cho {{ current_channel.channel_name }}
-                    {% else %}
-                        Chưa có nội dung nào
-                    {% endif %}
-                </h4>
-                <p class="text-muted mb-4">
-                    {% if current_channel %}
-                        Bắt đầu tạo nội dung cho kênh {{ current_channel.channel_name }} ngay bây giờ!
-                    {% else %}
-                    Bắt đầu tạo nội dung YouTube đầu tiên của bạn ngay bây giờ!
-                    {% endif %}
+                <i class="fas fa-box-open fa-3x text-muted"></i>
+                <h4 class="mt-3">Không có package nào</h4>
+                <p class="text-muted">
+                    Bắt đầu bằng cách <a href="/">tạo một nội dung mới</a>.
                 </p>
-                <a href="/" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Tạo Nội Dung Mới
-                </a>
             </div>
         {% endif %}
     </div>
 </section>
 
-<!-- Package Details Modal -->
-<div class="modal fade" id="packageModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-white">
+<!-- Package Detail Modal -->
+<div class="modal fade" id="packageDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title text-dark">
-                    <i class="fas fa-info-circle"></i> 
-                    Chi Tiết Package
-                </h5>
+                <h5 class="modal-title">Chi tiết Package</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="packageDetails">
-                <div class="text-center">
-                    <div class="loading-spinner"></div>
-                    <p>Đang tải...</p>
+            <div class="modal-body" id="packageDetailBody">
+                <!-- Content will be loaded here via JS -->
+                 <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
                 </div>
+            </div>
+             <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="refreshPackageDetail()">
+                    <i class="fas fa-sync-alt"></i> Làm mới
+                </button>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
 <script>
-let packageModal;
+    let currentPackageId = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    packageModal = new bootstrap.Modal(document.getElementById('packageModal'));
-});
-
-function refreshDashboard() {
-    showAlert('Đang refresh dashboard...', 'info');
-    setTimeout(() => {
-        window.location.reload();
-    }, 1000);
-}
-
-async function viewPackageDetails(packageId) {
-    try {
-        packageModal.show();
+    function viewPackageDetails(packageId) {
+        currentPackageId = packageId;
+        const modal = new bootstrap.Modal(document.getElementById('packageDetailModal'));
+        modal.show();
+        refreshPackageDetail();
+    }
+    
+    async function refreshPackageDetail() {
+        if (!currentPackageId) return;
         
-        const response = await fetch(`/api/package/${packageId}`);
-        const package = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(package.detail || 'Lỗi khi tải package');
+        const detailBody = document.getElementById('packageDetailBody');
+        detailBody.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>`;
+
+        try {
+            const response = await fetch(`/api/package/${currentPackageId}`);
+            if (!response.ok) {
+                detailBody.innerHTML = `<div class="alert alert-danger">Lỗi khi tải dữ liệu.</div>`;
+                return;
+            }
+            const data = await response.json();
+            renderPackageDetail(data);
+        } catch (error) {
+            detailBody.innerHTML = `<div class="alert alert-danger">Lỗi kết nối.</div>`;
         }
-        
-        // Render package details
-        const detailsHtml = `
-            <div class="row">
-                <div class="col-md-6">
-                    <h6 class="text-dark"><i class="fas fa-info"></i> Thông Tin Cơ Bản</h6>
-                    <table class="table table-bordered table-sm">
-                        <tr>
-                            <td>ID:</td>
-                            <td><code>${package.id}</code></td>
-                        </tr>
-                        <tr>
-                            <td>Kênh:</td>
-                            <td>${package.input_data.channel_name}</td>
-                        </tr>
-                        <tr>
-                            <td>Trạng thái:</td>
-                            <td><span class="badge status-${package.status}">${package.status.toUpperCase()}</span></td>
-                        </tr>
-                        <tr>
-                            <td>Tạo lúc:</td>
-                            <td>${new Date(package.created_at).toLocaleString('vi-VN')}</td>
-                        </tr>
-                        <tr>
-                            <td>Cập nhật:</td>
-                            <td>${new Date(package.updated_at).toLocaleString('vi-VN')}</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <div class="col-md-6">
-                    ${package.generated_images && package.generated_images.thumbnail_url ? `
-                        <h6 class="text-dark"><i class="fas fa-image"></i> Thumbnail</h6>
-                        <img src="${package.generated_images.thumbnail_url}" 
-                             class="img-fluid rounded mb-3" 
-                             style="max-height: 200px;">
-                    ` : ''}
-                    
-                    ${package.generated_images ? `
-                        <p><strong>Số ảnh tạo:</strong> ${package.generated_images.additional_images} ảnh</p>
-                    ` : ''}
-                </div>
-            </div>
-            
-            ${package.generated_images && package.generated_images.midjourney_urls && package.generated_images.midjourney_urls.length > 0 ? `
-                <div class="mt-4">
-                    <h6 class="text-dark"><i class="fas fa-images"></i> Chọn Ảnh Thumbnail (${package.generated_images.midjourney_urls.length} ảnh)</h6>
-                    <div class="row">
-                        ${package.generated_images.midjourney_urls.map((url, index) => `
-                            <div class="col-md-3 col-sm-6 mb-3">
-                                <div class="card image-selection-card ${package.generated_images.selected_image_url === url ? 'selected' : ''}" 
-                                     onclick="selectImage('${package.id}', '${url}', this)">
-                                    <img src="${url}" class="card-img-top" style="height: 150px; object-fit: cover;">
-                                    <div class="card-body p-2 text-center">
-                                        <small class="text-muted">Ảnh ${index + 1}</small>
-                                        ${package.generated_images.selected_image_url === url ? 
-                                            '<i class="fas fa-check-circle text-success"></i>' : 
-                                            '<i class="fas fa-circle text-muted"></i>'
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    ${package.generated_images.selected_image_url ? `
-                        <div class="alert alert-success mt-2">
-                            <i class="fas fa-check"></i> Đã chọn ảnh: ${package.generated_images.selected_image_url}
-                        </div>
-                    ` : `
-                        <div class="alert alert-info mt-2">
-                            <i class="fas fa-info-circle"></i> Nhấn vào ảnh để chọn làm thumbnail chính
-                        </div>
-                    `}
-                </div>
-            ` : ''}
-            
+    }
 
-            
-            ${package.generated_content ? `
-                <div class="mt-4">
-                    <h6 class="text-dark"><i class="fas fa-file-text"></i> Nội Dung Đã Tạo</h6>
-                    <div class="card border">
-                        <div class="card-body">
-                            <h6 class="text-dark">Tiêu đề:</h6>
-                            <p class="text-primary">${package.generated_content.title}</p>
-                            
-                            <h6 class="text-dark">Mô tả:</h6>
-                            <p class="small">${package.generated_content.description.substring(0, 200)}...</p>
-                            
-                            <h6 class="text-dark">Tags:</h6>
-                            <div class="d-flex flex-wrap gap-1">
-                                ${package.generated_content.tags.map(tag => 
-                                    `<span class="badge bg-primary">${tag}</span>`
-                                ).join('')}
-                            </div>
-                            
-                            <h6 class="mt-3 text-dark">Tên Thumbnail:</h6>
-                            <p>${package.generated_content.thumbnail_name}</p>
-                        </div>
-                    </div>
+    function renderPackageDetail(data) {
+        const detailBody = document.getElementById('packageDetailBody');
+        
+        // Image display logic
+        let imageHtml = '';
+        if (data.input_data && data.input_data.video_frame_url) {
+            imageHtml = `
+                <div class="mb-3 text-center">
+                    <h6 class="text-muted">Ảnh tham khảo</h6>
+                    <img src="${data.input_data.video_frame_url}" class="img-fluid rounded" style="max-height: 200px;">
+                </div>`;
+        } else if (data.generated_images && data.generated_images.thumbnail_url) {
+            imageHtml = `
+                <div class="mb-3 text-center">
+                    <h6 class="text-muted">Thumbnail được tạo</h6>
+                    <img src="${data.generated_images.thumbnail_url}" class="img-fluid rounded" style="max-height: 200px;">
+                </div>`;
+        }
+
+        // Midjourney images selection
+        let midjourneyHtml = '';
+        if (data.generated_images && data.generated_images.midjourney_urls && data.generated_images.midjourney_urls.length > 0) {
+            const images = data.generated_images.midjourney_urls.map(url => `
+                <div class="col-6 col-md-3 mb-2">
+                    <img src="${url}" class="img-fluid rounded border selectable-image"
+                         onclick="selectImage('${data.id}', this, '${url}')"
+                         ${data.generated_images.selected_image_url === url ? 'style="border: 3px solid #0d6efd !important;"' : ''}>
                 </div>
-            ` : ''}
+            `).join('');
+            
+            midjourneyHtml = `
+                <div class="mt-4">
+                    <h6 class="text-muted">Chọn ảnh từ Midjourney (4)</h6>
+                    <div class="row">${images}</div>
+                </div>`;
+        }
+
+        const logsHtml = data.processing_logs.map(log => `<div><small class="text-muted">${log}</small></div>`).join('');
+
+        detailBody.innerHTML = `
+            <h5>${(data.generated_content && data.generated_content.title) || data.input_data.video_topic}</h5>
+            <p><strong>Package ID:</strong> ${data.id}</p>
+            <p><strong>Trạng thái:</strong> <span class="badge bg-primary">${data.status}</span></p>
+            
+            ${imageHtml}
+            ${midjourneyHtml}
+
+            <div class="mt-4">
+                <h6 class="text-muted">Thông tin đã tạo</h6>
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Tiêu đề:</strong> ${(data.generated_content && data.generated_content.title) || 'N/A'}</li>
+                    <li class="list-group-item"><strong>Mô tả:</strong><br><small>${(data.generated_content && data.generated_content.description) || 'N/A'}</small></li>
+                    <li class="list-group-item"><strong>Tags:</strong> ${(data.generated_content && data.generated_content.tags.join(', ')) || 'N/A'}</li>
+                </ul>
+            </div>
             
             <div class="mt-4">
-                <h6 class="text-dark"><i class="fas fa-list"></i> Processing Logs</h6>
-                <div class="bg-light rounded p-3 border" style="max-height: 200px; overflow-y: auto;">
-                    ${package.processing_logs.map(log => 
-                        `<div class="small text-secondary mb-1">${log}</div>`
-                    ).join('')}
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('packageDetails').innerHTML = detailsHtml;
-        
-    } catch (error) {
-        document.getElementById('packageDetails').innerHTML = `
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle"></i> 
-                Lỗi khi tải chi tiết: ${error.message}
+                <h6 class="text-muted">Logs</h6>
+                <div class="log-box">${logsHtml}</div>
             </div>
         `;
     }
-}
 
-async function downloadAssets(packageId) {
-    try {
-        showAlert('Tính năng download đang được phát triển...', 'info');
-        // TODO: Implement download functionality
-    } catch (error) {
-        showAlert('Lỗi khi download: ' + error.message, 'danger');
-    }
-}
+    async function selectImage(packageId, element, imageUrl) {
+        // Remove selection from others
+        document.querySelectorAll('.selectable-image').forEach(img => img.style.border = '1px solid #dee2e6');
+        // Highlight selected
+        element.style.border = '3px solid #0d6efd !important;';
 
-async function selectImage(packageId, imageUrl, cardElement) {
-    try {
-        // Hiển thị loading
-        const originalContent = cardElement.innerHTML;
-        cardElement.innerHTML = `
-            <div class="text-center p-3">
-                <div class="loading-spinner mb-2"></div>
-                <small>Đang cập nhật...</small>
-            </div>
-        `;
-        
-        // Gọi API để cập nhật ảnh được chọn
-        const response = await fetch(`/api/packages/${packageId}/select-image`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                selected_image_url: imageUrl
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error('Lỗi khi cập nhật ảnh');
+        try {
+            await fetch(`/api/packages/${packageId}/select-image`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({selected_image_url: imageUrl})
+            });
+        } catch (error) {
+            console.error('Lỗi khi chọn ảnh:', error);
         }
+    }
+    
+    function refreshDashboard() {
+        // Simple reload for now
+        window.location.reload();
+    }
+
+    function updateCard(packageData) {
+        const card = document.getElementById(`package-card-${packageData.package_id}`);
+        if (!card) return;
+
+        // Update status badge
+        const statusBadge = card.querySelector('.package-status');
+        statusBadge.textContent = packageData.status.toUpperCase();
+        statusBadge.className = `badge status-badge status-${packageData.status}`;
+
+        // Update title
+        const titleEl = card.querySelector('.package-title');
+        titleEl.innerHTML = packageData.title ? `${packageData.title.substring(0,60)}...` : `<span class="text-muted">${packageData.package_id}</span>`;
+
+        // Update progress bar
+        const progressMap = {'pending': 0, 'processing': 25, 'generating_content': 50, 'generated': 100, 'failed': 100};
+        const progress = progressMap[packageData.status] || 0;
+        const progressBar = card.querySelector('.progress-bar');
+        progressBar.style.width = `${progress}%`;
         
-        const result = await response.json();
-        
-        // Cập nhật UI
-        document.querySelectorAll('.image-selection-card').forEach(card => {
-            card.classList.remove('selected');
-            const icon = card.querySelector('i');
-            if (icon) {
-                icon.className = 'fas fa-circle text-muted';
+        const statusText = card.querySelector('.package-status-text');
+        statusText.textContent = packageData.status.replace('_', ' ')|title;
+
+        // Update thumbnail
+        const thumbnailContainer = card.querySelector('.thumbnail-container');
+        let thumbnailHtml = '';
+        if (packageData.video_frame_url) {
+            thumbnailHtml = `
+                <img src="${packageData.video_frame_url}" alt="Reference Frame" class="thumbnail-preview" title="Ảnh tham khảo">
+                <div class="position-absolute top-0 end-0 bg-info text-white px-1 rounded" style="font-size: 0.7rem; margin: 2px;">
+                    <i class="fas fa-upload"></i> Ref
+                </div>`;
+        } else if (packageData.thumbnail_url) {
+            thumbnailHtml = `
+                <img src="${packageData.thumbnail_url}" alt="Generated Thumbnail" class="thumbnail-preview" title="Ảnh được tạo">
+                <div class="position-absolute top-0 end-0 bg-success text-white px-1 rounded" style="font-size: 0.7rem; margin: 2px;">
+                    <i class="fas fa-magic"></i> AI
+                </div>`;
+        } else {
+            thumbnailHtml = `
+                <div class="bg-dark rounded d-flex align-items-center justify-content-center" style="height: 85px; max-width: 150px; margin: 0 auto;">
+                    <i class="fas fa-image fa-2x text-muted"></i>
+                </div>`;
+        }
+        thumbnailContainer.innerHTML = thumbnailHtml;
+
+        // Update logs
+        const logsContainer = card.querySelector('.package-logs-container');
+        if (packageData.logs && packageData.logs.length > 0) {
+            const logsHtml = packageData.logs.map(log => 
+                `<div class="small text-muted"><i class="fas fa-chevron-right"></i> ${log.split(': ')[1] || log}</div>`
+            ).join('');
+            logsContainer.innerHTML = `<small class="text-muted">Logs gần nhất:</small><div class="mt-1">${logsHtml}</div>`;
+        }
+    }
+
+    async function pollPackageUpdates() {
+        try {
+            const response = await fetch('/api/packages');
+            if (!response.ok) return;
+
+            const data = await response.json();
+            if (data.packages) {
+                data.packages.forEach(pkg => updateCard(pkg));
             }
-        });
-        
-        // Đánh dấu ảnh được chọn
-        cardElement.classList.add('selected');
-        const icon = cardElement.querySelector('i');
-        if (icon) {
-            icon.className = 'fas fa-check-circle text-success';
+        } catch (error) {
+            console.error("Lỗi khi lấy cập nhật packages:", error);
         }
-        
-        // Khôi phục nội dung card
-        cardElement.innerHTML = originalContent;
-        cardElement.classList.add('selected');
-        
-        // Cập nhật alert
-        const alertContainer = document.querySelector('.alert');
-        if (alertContainer) {
-            alertContainer.className = 'alert alert-success mt-2';
-            alertContainer.innerHTML = `
-                <i class="fas fa-check"></i> Đã chọn ảnh: ${imageUrl}
-            `;
-        }
-        
-        showAlert('Đã cập nhật ảnh được chọn thành công!', 'success');
-        
-    } catch (error) {
-        // Khôi phục nội dung card nếu có lỗi
-        cardElement.innerHTML = originalContent;
-        showAlert('Lỗi khi cập nhật ảnh: ' + error.message, 'danger');
     }
-}
 
-// Status color mapping
-const statusColors = {
-    'pending': 'warning',
-    'processing': 'primary', 
-    'generated': 'success',
-    'failed': 'danger'
-};
+    // Initial poll and set interval
+    pollPackageUpdates();
+    setInterval(pollPackageUpdates, 15000); // Poll every 15 seconds
 
-// Auto refresh dashboard every 30 seconds (defined in base template)
-// Page reload sẽ được thực hiện tự động
 </script>
 {% endblock %} 

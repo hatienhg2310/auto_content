@@ -12,6 +12,58 @@
     </div>
 </div>
 
+<!-- Workflow Section -->
+<section class="py-5 workflow-section rounded">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h3>Quy Trình Tự Động Hóa</h3>
+            <p class="text-muted">Các giai đoạn được tự động hóa</p>
+        </div>
+        
+        <div class="row text-center">
+            <div class="col-md mb-4">
+                <div class="feature-icon-bg">
+                    <i class="fas fa-upload fa-2x"></i>
+                </div>
+                <h6 class="mt-3">1. Input</h6>
+                <small class="text-muted">Nhận thông tin kênh & chủ đề</small>
+            </div>
+            
+            <div class="col-md mb-4">
+                <div class="feature-icon-bg">
+                    <i class="fas fa-brain fa-2x"></i>
+                </div>
+                <h6 class="mt-3">2. AI Content</h6>
+                <small class="text-muted">Tạo title, description, tags</small>
+            </div>
+            
+            <div class="col-md mb-4">
+                <div class="feature-icon-bg">
+                    <i class="fas fa-image fa-2x"></i>
+                </div>
+                <h6 class="mt-3">3. AI Images</h6>
+                <small class="text-muted">Tạo thumbnail & hình ảnh</small>
+            </div>
+            
+            <div class="col-md mb-4">
+                <div class="feature-icon-bg">
+                    <i class="fas fa-cogs fa-2x"></i>
+                </div>
+                <h6 class="mt-3">4. Processing</h6>
+                <small class="text-muted">Gộp và xử lý nội dung</small>
+            </div>
+            
+            <div class="col-md mb-4">
+                <div class="feature-icon-bg">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+                <h6 class="mt-3">5. Complete</h6>
+                <small class="text-muted">Hoàn thành gói nội dung</small>
+            </div>
+        </div>
+    </div>
+</section>
+
 <div class="container mt-5">
     <!-- Form tạo nội dung -->
     <div class="card shadow-sm mb-5">
@@ -38,14 +90,69 @@
 
                 <hr class="my-4">
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="video-frame" class="form-label">Ảnh Frame Video (Tùy chọn)</label>
-                        <input type="file" id="video-frame" name="video_frame" class="form-control" accept="image/*">
+                <!-- Video Frame Options -->
+                <div class="mb-4">
+                    <h6 class="text-secondary mb-3">
+                        <i class="fas fa-video"></i> Lấy Frame Video (Tùy chọn)
+                    </h6>
+                    
+                    <!-- Video Frame Method Selection -->
+                    <div class="btn-group mb-3" role="group" aria-label="Video frame method">
+                        <input type="radio" class="btn-check" name="frame_method" id="frame_method_image" value="image" checked>
+                        <label class="btn btn-outline-primary" for="frame_method_image">
+                            <i class="fas fa-image"></i> Upload Ảnh
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="frame_method" id="frame_method_video" value="video">
+                        <label class="btn btn-outline-primary" for="frame_method_video">
+                            <i class="fas fa-file-video"></i> Upload Video
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="frame_method" id="frame_method_youtube" value="youtube">
+                        <label class="btn btn-outline-primary" for="frame_method_youtube">
+                            <i class="fab fa-youtube"></i> YouTube URL
+                        </label>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    
+                    <!-- Frame Input Options -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <!-- Upload Image -->
+                            <div id="frame_input_image" class="frame-input-option">
+                                <label for="video-frame" class="form-label">Chọn Ảnh Frame</label>
+                                <input type="file" id="video-frame" name="video_frame" class="form-control" accept="image/*">
+                                <small class="form-text text-muted">Chọn ảnh frame từ video để AI phân tích</small>
+                            </div>
+                            
+                            <!-- Upload Video -->
+                            <div id="frame_input_video" class="frame-input-option" style="display: none;">
+                                <label for="video-file" class="form-label">Chọn File Video</label>
+                                <input type="file" id="video-file" name="video_file" class="form-control" accept="video/*">
+                                <small class="form-text text-muted">Hệ thống sẽ tự động lấy frame từ giữa video</small>
+                            </div>
+                            
+                            <!-- YouTube URL -->
+                            <div id="frame_input_youtube" class="frame-input-option" style="display: none;">
+                                <label for="youtube-url" class="form-label">URL Video YouTube</label>
+                                <input type="url" id="youtube-url" name="youtube_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                                <small class="form-text text-muted">Nhập link YouTube để tự động lấy frame</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div id="timestamp_input" style="display: none;">
+                                <label for="video-timestamp" class="form-label">Thời điểm (giây)</label>
+                                <input type="number" id="video-timestamp" name="video_timestamp" class="form-control" placeholder="60" min="0" step="0.1">
+                                <small class="form-text text-muted">Để trống = giữa video</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
                         <label for="additional-context" class="form-label">Thông Tin Bổ Sung (Tùy chọn)</label>
-                        <textarea id="additional-context" name="additional_context" class="form-control" rows="1" placeholder="Từ khóa, yêu cầu đặc biệt..."></textarea>
+                        <textarea id="additional-context" name="additional_context" class="form-control" rows="2" placeholder="Từ khóa, yêu cầu đặc biệt..."></textarea>
                     </div>
                 </div>
                 
@@ -56,64 +163,54 @@
             </form>
         </div>
     </div>
-    
-    <!-- Workflow Section -->
-    <section class="py-5 workflow-section rounded">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h3>Quy Trình Tự Động Hóa</h3>
-                <p class="text-muted">Các giai đoạn được tự động hóa</p>
-            </div>
-            
-            <div class="row text-center">
-                <div class="col-md mb-4">
-                    <div class="feature-icon-bg">
-                        <i class="fas fa-upload fa-2x"></i>
-                    </div>
-                    <h6 class="mt-3">1. Input</h6>
-                    <small class="text-muted">Nhận thông tin kênh & chủ đề</small>
-                </div>
-                
-                <div class="col-md mb-4">
-                    <div class="feature-icon-bg">
-                        <i class="fas fa-brain fa-2x"></i>
-                    </div>
-                    <h6 class="mt-3">2. AI Content</h6>
-                    <small class="text-muted">Tạo title, description, tags</small>
-                </div>
-                
-                <div class="col-md mb-4">
-                    <div class="feature-icon-bg">
-                        <i class="fas fa-image fa-2x"></i>
-                    </div>
-                    <h6 class="mt-3">3. AI Images</h6>
-                    <small class="text-muted">Tạo thumbnail & hình ảnh</small>
-                </div>
-                
-                <div class="col-md mb-4">
-                    <div class="feature-icon-bg">
-                        <i class="fas fa-cogs fa-2x"></i>
-                    </div>
-                    <h6 class="mt-3">4. Processing</h6>
-                    <small class="text-muted">Gộp và xử lý nội dung</small>
-                </div>
-                
-                <div class="col-md mb-4">
-                    <div class="feature-icon-bg">
-                        <i class="fas fa-check-circle fa-2x"></i>
-                    </div>
-                    <h6 class="mt-3">5. Complete</h6>
-                    <small class="text-muted">Hoàn thành gói nội dung</small>
-                </div>
-            </div>
-        </div>
-    </section>
 
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// Handle frame method selection
+document.addEventListener('DOMContentLoaded', function() {
+    const frameMethodRadios = document.querySelectorAll('input[name="frame_method"]');
+    const frameInputOptions = document.querySelectorAll('.frame-input-option');
+    const timestampInput = document.getElementById('timestamp_input');
+    
+    frameMethodRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Hide all input options
+            frameInputOptions.forEach(option => {
+                option.style.display = 'none';
+            });
+            
+            // Show selected option
+            const selectedOption = document.getElementById(`frame_input_${this.value}`);
+            if (selectedOption) {
+                selectedOption.style.display = 'block';
+            }
+            
+            // Show timestamp input for video and youtube methods
+            if (this.value === 'video' || this.value === 'youtube') {
+                timestampInput.style.display = 'block';
+            } else {
+                timestampInput.style.display = 'none';
+            }
+        });
+    });
+    
+    // YouTube URL validation
+    const youtubeUrlInput = document.getElementById('youtube-url');
+    youtubeUrlInput.addEventListener('input', function() {
+        const url = this.value;
+        const isValid = url.includes('youtube.com/watch') || url.includes('youtu.be/') || url.includes('youtube.com/embed/');
+        
+        if (url && !isValid) {
+            this.setCustomValidity('Vui lòng nhập URL YouTube hợp lệ');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
+
 document.getElementById('create-content-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     

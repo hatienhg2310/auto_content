@@ -73,7 +73,7 @@ class TestModels:
         )
         assert input_data.channel_name == "Test Channel"
         assert input_data.channel_description == "Test Description"
-        assert input_data.created_by == "Anh Hà Tiến"
+        assert input_data.created_by == "Team AI"
     
     def test_workflow_config(self):
         """Test WorkflowConfig model"""

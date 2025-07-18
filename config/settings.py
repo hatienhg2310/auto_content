@@ -43,12 +43,13 @@ class Settings(BaseSettings):
     debug: bool = True
     
     # Storage Paths
-    data_storage_path: str = "./data"
-    images_storage_path: str = "./data/images"
-    logs_path: str = "./logs"
+    base_dir: Path = Path(__file__).resolve().parent.parent
+    data_storage_path: str = str(base_dir / "data")
+    images_storage_path: str = str(base_dir / "data" / "images")
+    logs_path: str = str(base_dir / "logs")
     
     # Content Creator Info
-    channel_owner_name: str = "Anh Hà Tiến"
+    channel_owner_name: str = "Team AI"
     default_channel_name: str = Field("Demo Channel")
     default_channel_description: str = Field("Kênh demo để thử nghiệm tạo nội dung tự động")
     

@@ -12,6 +12,21 @@ import uuid
 import sys
 import pathlib
 import json
+import re
+
+
+def sanitize_filename(filename: str) -> str:
+    """Sanitizes a filename by removing special characters and replacing spaces."""
+    if not filename:
+        return ""
+    # Replace spaces and known problematic characters with underscore
+    filename = re.sub(r'[\\s/\\\\:*?"<>|]+', '_', filename)
+    # Remove any other non-alphanumeric, non-dot, non-underscore, non-hyphen characters
+    filename = re.sub(r'[^\\w\\.\\-_]', '', filename)
+    # Collapse multiple underscores
+    filename = re.sub(r'__+', '_', filename)
+    return filename
+
 
 # Thêm thư mục gốc vào sys.path
 root_dir = str(pathlib.Path(__file__).parent.parent.absolute())
@@ -21,6 +36,7 @@ if root_dir not in sys.path:
 from src.models import InputData, ContentPackage, WorkflowConfig, ChannelConfig
 from src.workflow_engine import workflow_engine
 from src.channel_manager import channel_manager
+from src.video_service import video_extractor
 from config.settings import settings
 
 # Setup logging
@@ -114,174 +130,10 @@ async def dashboard(request: Request, channel_id: Optional[str] = None):
         }, status_code=500)
 
 
-@app.get("/channels", response_class=HTMLResponse)
-async def channels_page(request: Request):
-    """Trang quản lý channels"""
-    try:
-        channels = channel_manager.get_all_channels()
-        
-        # Tạo channel stats
-        channel_stats = {
-            "total_channels": len(channels),
-            "active_channels": sum(1 for c in channels.values() if c.is_active),
-            "channels_with_airtable": sum(1 for c in channels.values() if getattr(c, 'airtable_base_id', None)),
-            "channels_with_google_sheets": sum(1 for c in channels.values() if getattr(c, 'google_sheets_id', None))
-        }
-        
-        return templates.TemplateResponse("channels.html", {
-            "request": request,
-            "channels": channels,
-            "channel_stats": channel_stats
-        })
-    except Exception as e:
-        logger.error(f"Lỗi trang channels: {str(e)}")
-        # Trả về HTMLResponse thay vì dict
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error_message": f"Lỗi khi tải trang kênh: {str(e)}"
-        }, status_code=500)
 
 
-# === CHANNEL MANAGEMENT ENDPOINTS ===
-
-@app.post("/api/channels")
-async def create_channel(
-    channel_id: str = Form(...),
-    channel_name: str = Form(...),
-    channel_description: str = Form(...),
-    content_style: Optional[str] = Form(None),
-    target_audience: Optional[str] = Form(None),
-    content_topics: Optional[str] = Form(None)
-):
-    """Tạo kênh mới"""
-    try:
-        # Kiểm tra channel đã tồn tại
-        if channel_manager.get_channel(channel_id):
-            raise HTTPException(status_code=400, detail="Channel ID đã tồn tại")
-        
-        # Tạo ChannelConfig
-        topics_list = [topic.strip() for topic in content_topics.split(",")] if content_topics else []
-        
-        channel_config = ChannelConfig(
-            channel_id=channel_id,
-            channel_name=channel_name,
-            channel_description=channel_description,
-            content_style=content_style,
-            target_audience=target_audience,
-            content_topics=topics_list
-        )
-        
-        # Thêm channel
-        success = channel_manager.add_channel(channel_config)
-        
-        if success:
-            return {"success": True, "message": f"Đã tạo kênh {channel_name} thành công"}
-        else:
-            raise HTTPException(status_code=500, detail="Lỗi khi tạo kênh")
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Lỗi tạo kênh: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/channels")
-async def get_channels():
-    """Lấy danh sách tất cả channels"""
-    try:
-        channels = channel_manager.get_all_channels()
-        
-        return {
-            "channels": {channel_id: channel.dict() for channel_id, channel in channels.items()}
-        }
-    except Exception as e:
-        logger.error(f"Lỗi lấy channels: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/api/channels/{channel_id}")
-async def get_channel(channel_id: str):
-    """Lấy thông tin một channel"""
-    try:
-        channel = channel_manager.get_channel(channel_id)
-        if not channel:
-            raise HTTPException(status_code=404, detail="Không tìm thấy kênh")
-        
-        setup_status = channel_manager.validate_channel_setup(channel_id)
-        
-        return {
-            "channel": channel.dict(),
-            "setup_status": setup_status
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Lỗi lấy channel: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.put("/api/channels/{channel_id}")
-async def update_channel(
-    channel_id: str,
-    channel_name: str = Form(...),
-    channel_description: str = Form(...),
-    content_style: Optional[str] = Form(None),
-    target_audience: Optional[str] = Form(None),
-    content_topics: Optional[str] = Form(None),
-    is_active: bool = Form(True)
-):
-    """Cập nhật thông tin channel"""
-    try:
-        existing_channel = channel_manager.get_channel(channel_id)
-        if not existing_channel:
-            raise HTTPException(status_code=404, detail="Không tìm thấy kênh")
-        
-        # Parse topics
-        topics_list = [topic.strip() for topic in content_topics.split(",")] if content_topics else []
-        
-        # Tạo channel config mới
-        updated_channel = ChannelConfig(
-            channel_id=channel_id,
-            channel_name=channel_name,
-            channel_description=channel_description,
-            content_style=content_style,
-            target_audience=target_audience,
-            content_topics=topics_list,
-            is_active=is_active
-        )
-        
-        # Cập nhật channel
-        success = channel_manager.update_channel(channel_id, updated_channel)
-        
-        if success:
-            return {"success": True, "message": f"Đã cập nhật kênh {channel_name} thành công"}
-        else:
-            raise HTTPException(status_code=500, detail="Lỗi khi cập nhật kênh")
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Lỗi cập nhật kênh: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.delete("/api/channels/{channel_id}")
-async def delete_channel(channel_id: str):
-    """Xóa kênh"""
-    try:
-        success = channel_manager.remove_channel(channel_id)
-        
-        if success:
-            return {"success": True, "message": f"Đã xóa kênh {channel_id} thành công"}
-        else:
-            raise HTTPException(status_code=404, detail="Không tìm thấy kênh")
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Lỗi xóa kênh: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 # === CONTENT GENERATION ENDPOINTS ===
@@ -293,7 +145,10 @@ async def create_content(
     channel_description: str = Form(...),
     video_topic: str = Form(...),
     additional_context: Optional[str] = Form(None),
-    video_frame: Optional[UploadFile] = File(None)
+    video_frame: Optional[UploadFile] = File(None),
+    video_file: Optional[UploadFile] = File(None),
+    youtube_url: Optional[str] = Form(None),
+    video_timestamp: Optional[float] = Form(None)
 ):
     """Tạo nội dung mới từ thông tin kênh nhập trực tiếp"""
     try:
@@ -313,20 +168,88 @@ async def create_content(
             additional_context=additional_context
         )
         
-        # Xử lý file ảnh nếu có
-        if video_frame:
-            # Lưu ảnh vào thư mục images để có thể truy cập qua URL
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"frame_{timestamp}_{uuid.uuid4().hex[:8]}_{video_frame.filename}"
-            file_path = os.path.join(settings.images_storage_path, filename)
+        # Xử lý frame video với các phương thức khác nhau
+        frame_extracted = False
+        
+        try:
+            # Phương thức 1: Upload ảnh trực tiếp
+            if video_frame:
+                logger.info("Xử lý upload ảnh frame trực tiếp")
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                
+                # Sanitize filename
+                safe_filename = sanitize_filename(video_frame.filename)
+                filename = f"frame_{timestamp}_{uuid.uuid4().hex[:8]}_{safe_filename}"
+                file_path = os.path.join(settings.images_storage_path, filename)
+                
+                with open(file_path, "wb") as f:
+                    content = await video_frame.read()
+                    f.write(content)
+                
+                input_data.video_frame_file = file_path
+                input_data.video_frame_url = f"/images/{filename}"
+                frame_extracted = True
             
-            with open(file_path, "wb") as f:
-                content = await video_frame.read()
-                f.write(content)
+            # Phương thức 2: Upload video file và trích xuất frame
+            elif video_file:
+                logger.info("Xử lý upload video file và trích xuất frame")
+                
+                # Lưu video file tạm thời
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                safe_video_filename = sanitize_filename(video_file.filename)
+                video_filename = f"video_{timestamp}_{uuid.uuid4().hex[:8]}_{safe_video_filename}"
+                video_path = os.path.join(settings.images_storage_path, video_filename)
+                
+                with open(video_path, "wb") as f:
+                    content = await video_file.read()
+                    f.write(content)
+                
+                try:
+                    # Trích xuất frame từ video
+                    frame_path, frame_url = await video_extractor.extract_frame_from_local_video(
+                        video_path, 
+                        video_timestamp
+                    )
+                    
+                    input_data.video_frame_file = frame_path
+                    input_data.video_frame_url = frame_url
+                    input_data.video_file = video_path
+                    input_data.video_timestamp = video_timestamp
+                    frame_extracted = True
+                    
+                    logger.info(f"Đã trích xuất frame từ video: {frame_path}")
+                    
+                finally:
+                    # Xóa file video tạm thời
+                    if os.path.exists(video_path):
+                        os.remove(video_path)
             
-            # Cập nhật đường dẫn file và URL
-            input_data.video_frame_file = file_path
-            input_data.video_frame_url = f"/images/{filename}"
+            # Phương thức 3: YouTube URL và trích xuất frame
+            elif youtube_url:
+                logger.info(f"Xử lý YouTube URL và trích xuất frame: {youtube_url}")
+                
+                # Validate YouTube URL
+                if not video_extractor.validate_youtube_url(youtube_url):
+                    raise HTTPException(status_code=400, detail="URL YouTube không hợp lệ")
+                
+                # Trích xuất frame từ YouTube
+                frame_path, frame_url = await video_extractor.extract_frame_from_youtube(
+                    youtube_url, 
+                    video_timestamp
+                )
+                
+                input_data.video_frame_file = frame_path
+                input_data.video_frame_url = frame_url
+                input_data.youtube_url = youtube_url
+                input_data.video_timestamp = video_timestamp
+                frame_extracted = True
+                
+                logger.info(f"Đã trích xuất frame từ YouTube: {frame_path}")
+                
+        except Exception as e:
+            logger.error(f"Lỗi xử lý video frame: {str(e)}")
+            # Không raise exception, chỉ log và tiếp tục không có frame
+            logger.warning("Tiếp tục xử lý mà không có frame video")
         
         # Chạy workflow để tạo 1 content trong background
         async def process_single_content():
@@ -353,51 +276,7 @@ async def create_content(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/channels/{channel_id}/batch-create")
-async def create_batch_content(
-    channel_id: str,
-    background_tasks: BackgroundTasks,
-    topics: List[str] = Form(...),
-    additional_context: Optional[str] = Form(None)
-):
-    """Tạo nhiều nội dung cùng lúc cho một kênh"""
-    try:
-        # Kiểm tra channel tồn tại
-        channel = channel_manager.get_channel(channel_id)
-        if not channel:
-            raise HTTPException(status_code=404, detail="Không tìm thấy kênh")
-        
-        # Tạo input data cho từng topic
-        input_data_list = []
-        for topic in topics:
-            input_data = InputData(
-                channel_id=channel_id,
-                video_topic=topic.strip(),
-                additional_context=additional_context
-            )
-            input_data_list.append(input_data)
-        
-        # Chạy batch workflow trong background
-        async def process_batch():
-            try:
-                await workflow_engine.run_channel_batch(channel_id, input_data_list)
-            except Exception as e:
-                logger.error(f"Lỗi xử lý batch: {str(e)}")
-        
-        background_tasks.add_task(process_batch)
-        
-        return {
-            "success": True,
-            "message": f"Đã bắt đầu tạo {len(topics)} nội dung cho kênh {channel.channel_name}",
-            "channel_id": channel_id,
-            "topic_count": len(topics)
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Lỗi tạo batch content: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/api/packages/{package_id}")
@@ -427,38 +306,7 @@ async def get_package_status(package_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/channels/{channel_id}/packages")
-async def get_channel_packages(channel_id: str):
-    """Lấy tất cả packages của một kênh"""
-    try:
-        # Kiểm tra channel tồn tại
-        channel = channel_manager.get_channel(channel_id)
-        if not channel:
-            raise HTTPException(status_code=404, detail="Không tìm thấy kênh")
-        
-        packages = workflow_engine.get_packages_by_channel(channel_id)
-        
-        result = []
-        for package in packages:
-            result.append({
-                "package_id": package.id,
-                "status": package.status,
-                "created_at": package.created_at,
-                "title": package.generated_content.title if package.generated_content else None,
-                "thumbnail_url": package.generated_images.thumbnail_url if package.generated_images else None
-            })
-        
-        return {
-            "channel_id": channel_id,
-            "channel_name": channel.channel_name,
-            "packages": result
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Lỗi lấy channel packages: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/api/packages")
@@ -473,9 +321,12 @@ async def get_all_packages():
                 "package_id": package.id,
                 "channel_id": package.channel_id,
                 "channel_name": package.input_data.channel_name,
-                "status": package.status,
-                "created_at": package.created_at,
-                "title": package.generated_content.title if package.generated_content else None
+                "status": package.status.value,
+                "created_at": package.created_at.isoformat(),
+                "title": package.generated_content.title if package.generated_content else "Đang tạo...",
+                "logs": package.processing_logs[-2:],
+                "video_frame_url": package.input_data.video_frame_url,
+                "thumbnail_url": package.generated_images.thumbnail_url if package.generated_images else None
             })
         
         return {"packages": result}
@@ -485,16 +336,7 @@ async def get_all_packages():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/cleanup")
-async def cleanup_packages():
-    """Dọn dẹp packages cũ"""
-    try:
-        await workflow_engine.cleanup_completed_packages(max_age_hours=24)
-        return {"success": True, "message": "Đã dọn dẹp packages cũ"}
-        
-    except Exception as e:
-        logger.error(f"Lỗi cleanup packages: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/health")

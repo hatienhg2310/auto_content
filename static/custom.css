@@ -113,9 +113,10 @@ body {
 }
 
 .status-pending { background-color: var(--warning-color); color: var(--text-dark); }
-.status-processing { background-color: var(--primary-color); }
-.status-generated { background-color: var(--accent-color); }
-.status-failed { background-color: var(--danger-color); }
+.status-processing { background-color: var(--primary-color); color: #ffffff; }
+.status-generating_content { background-color: #17a2b8; color: #ffffff; }
+.status-generated { background-color: var(--accent-color); color: #ffffff; }
+.status-failed { background-color: var(--danger-color); color: #ffffff; }
 
 .thumbnail-preview {
     max-width: 150px;
@@ -219,6 +220,8 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     border: 2px solid #dee2e6;
+    position: relative;
+    overflow: hidden;
 }
 
 .image-selection-card:hover {
@@ -243,6 +246,124 @@ body {
 
 .image-selection-card:hover img {
     opacity: 0.9;
+}
+
+/* Image Preview Overlay */
+.image-preview-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    z-index: 1050;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    max-width: 500px;
+    max-height: 500px;
+    border: 3px solid var(--primary-color);
+}
+
+.image-preview-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.image-preview-overlay img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    display: block;
+}
+
+.image-preview-overlay .preview-title {
+    text-align: center;
+    margin-top: 10px;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+}
+
+/* Select Button Styling */
+.image-select-btn {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    font-size: 0.85rem;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: var(--primary-color);
+    border: none;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    white-space: nowrap;
+    min-width: 80px;
+}
+
+.image-selection-card:hover .image-select-btn {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-8px);
+}
+
+.image-select-btn:hover {
+    background: #3367d6;
+    transform: translateX(-50%) translateY(-10px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.image-select-btn.selected {
+    background: var(--accent-color);
+    opacity: 1;
+    transform: translateX(-50%) translateY(-8px);
+}
+
+.image-select-btn.selected:hover {
+    background: #0b8043;
+    transform: translateX(-50%) translateY(-10px) scale(1.05);
+}
+
+/* Thumbnail Preview Area Styling */
+.thumbnail-preview-area {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.thumbnail-preview-area .preview-image {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.thumbnail-placeholder {
+    transition: all 0.3s ease;
+}
+
+.thumbnail-placeholder:hover {
+    border-color: var(--primary-color) !important;
+    background-color: #f0f8ff !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .image-select-btn {
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        min-width: 70px;
+    }
+    
+    .thumbnail-preview-area {
+        padding: 10px;
+    }
 } 
 
 /* Progress bar widths */
@@ -312,4 +433,54 @@ body {
 .package-card .card-header .badge {
     font-size: 0.7rem;
     font-weight: 500;
+}
+
+/* Video Frame Selection Styles */
+.frame-input-option {
+    transition: all 0.3s ease;
+}
+
+.btn-check:checked + .btn-outline-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.btn-outline-primary:hover {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+#timestamp_input {
+    transition: all 0.3s ease;
+}
+
+/* Video upload progress styles */
+.upload-progress {
+    display: none;
+    margin-top: 10px;
+}
+
+.upload-progress .progress {
+    height: 8px;
+}
+
+/* YouTube URL validation styles */
+.youtube-url-invalid {
+    border-color: #dc3545 !important;
+}
+
+.youtube-url-valid {
+    border-color: #28a745 !important;
+}
+
+/* Frame method selection animation */
+.btn-group .btn {
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 } 

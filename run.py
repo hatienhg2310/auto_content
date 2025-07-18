@@ -55,7 +55,7 @@ def check_directories():
 def main():
     """Hàm chính"""
     print("🚀 YouTube Content Automation System")
-    print("👨‍💻 Developed by: Anh Hà Tiến")
+    print("👨‍💻 Developed by: Team AI")
     print("=" * 50)
     
     # Kiểm tra dependencies

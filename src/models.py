@@ -36,7 +36,7 @@ class ChannelConfig(BaseModel):
     google_sheet_url: Optional[str] = Field(None, description="URL đầy đủ của Google Sheet")
     
     # Metadata
-    created_by: str = Field(default="Anh Hà Tiến", description="Người quản lý kênh")
+    created_by: str = Field(default="Team AI", description="Người quản lý kênh")
     created_at: datetime = Field(default_factory=datetime.now)
     is_active: bool = Field(True, description="Kênh có đang hoạt động không")
 
@@ -55,7 +55,12 @@ class InputData(BaseModel):
     video_frame_file: Optional[str] = Field(None, description="Đường dẫn đến file ảnh frame")
     additional_context: Optional[str] = Field(None, description="Thông tin bổ sung")
     video_frame_url: Optional[str] = Field(None, description="URL frame video tham khảo")
-    created_by: str = Field(default="Anh Hà Tiến", description="Người tạo")
+    
+    # --- Video processing ---
+    video_file: Optional[str] = Field(None, description="Đường dẫn đến file video local")
+    youtube_url: Optional[str] = Field(None, description="URL video YouTube để trích xuất frame")
+    video_timestamp: Optional[float] = Field(None, description="Thời điểm lấy frame (giây)")
+    created_by: str = Field(default="Team AI", description="Người tạo")
     created_at: datetime = Field(default_factory=datetime.now)
 
 

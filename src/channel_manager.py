@@ -52,6 +52,12 @@ class ChannelManager:
                         if gid_match and not channel_data.get('google_sheet_gid'):
                             channel_data['google_sheet_gid'] = gid_match.group(1)
                     
+                    # Đảm bảo các trường bắt buộc có giá trị mặc định
+                    if 'is_active' not in channel_data:
+                        channel_data['is_active'] = True
+                    if 'content_topics' not in channel_data:
+                        channel_data['content_topics'] = []
+                    
                     channel = ChannelConfig(**channel_data)
                     self.channels[channel.channel_id] = channel
                 

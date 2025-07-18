@@ -158,6 +158,9 @@ class WorkflowEngine:
             package.status = ContentStatus.GENERATED
             package.add_log("Hoàn thành workflow tạo nội dung")
             
+            # Cập nhật package trong memory
+            self.active_packages[package.id] = package
+            
             logger.info(f"=== HOÀN THÀNH WORKFLOW: {package.id} ===")
             return package
             
@@ -167,6 +170,8 @@ class WorkflowEngine:
             if package:
                 package.status = ContentStatus.FAILED
                 package.add_log(f"Lỗi: {error_message}")
+                # Cập nhật package trong memory khi có lỗi
+                self.active_packages[package.id] = package
             
             raise
     
@@ -364,28 +369,7 @@ Yêu cầu tạo nội dung:
         
         return stats
     
-    async def cleanup_completed_packages(self, max_age_hours: int = 24):
-        """
-        Xóa các packages đã hoàn thành quá lâu để giảm bộ nhớ
-        """
-        now = datetime.now()
-        packages_to_remove = []
-        
-        for package_id, package in self.active_packages.items():
-            # Chỉ xóa các packages đã hoàn thành hoặc thất bại
-            if package.status in [ContentStatus.GENERATED, ContentStatus.PUBLISHED, ContentStatus.FAILED]:
-                # Tính thời gian tồn tại
-                age = now - package.updated_at
-                
-                # Nếu quá lâu, đánh dấu để xóa
-                if age.total_seconds() > max_age_hours * 3600:
-                    packages_to_remove.append(package_id)
-        
-        # Xóa các packages đã đánh dấu
-        for package_id in packages_to_remove:
-            del self.active_packages[package_id]
-        
-        logger.info(f"Đã xóa {len(packages_to_remove)} packages cũ")
+
 
     async def _stage_prepare_data(self, package: ContentPackage) -> WorkflowConfig:
         """

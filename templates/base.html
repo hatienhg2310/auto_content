@@ -39,21 +39,6 @@
                             <i class="fas fa-tachometer-alt"></i> Dashboard
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/channels">
-                            <i class="fas fa-broadcast-tower"></i> Quản lý Kênh
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="syncDatabases()">
-                            <i class="fas fa-sync-alt"></i> Đồng bộ
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="cleanupPackages()">
-                            <i class="fas fa-trash"></i> Cleanup
-                        </a>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -68,7 +53,7 @@
     <footer class="site-footer text-center py-4 mt-5">
         <div class="container">
             <p class="mb-0">
-                <i class="fas fa-copyright"></i> 2024 YouTube Content Automation by {{ owner or "Anh Hà Tiến" }}
+                <i class="fas fa-copyright"></i> 2025 YouTube Content Automation by {{ owner or "Team AI" }}
             </p>
             <p class="mb-0 text-muted">
                 <small>Hệ thống tự động hóa tạo nội dung YouTube với AI</small>
@@ -110,39 +95,7 @@
         }
         
         // API functions
-        async function syncDatabases() {
-            try {
-                const response = await fetch('/api/sync-databases', {
-                    method: 'POST'
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    showAlert(result.message, 'success');
-                } else {
-                    showAlert(result.message || 'Lỗi đồng bộ', 'danger');
-                }
-            } catch (error) {
-                showAlert('Lỗi khi đồng bộ: ' + error.message, 'danger');
-            }
-        }
-        
-        async function cleanupPackages() {
-            try {
-                const response = await fetch('/api/cleanup', {
-                    method: 'POST'
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    showAlert(result.message, 'success');
-                } else {
-                    showAlert(result.message || 'Lỗi cleanup', 'danger');
-                }
-            } catch (error) {
-                showAlert('Lỗi khi cleanup: ' + error.message, 'danger');
-            }
-        }
+        // Removed sync and cleanup functions
     </script>
     
     {% block extra_js %}{% endblock %}
